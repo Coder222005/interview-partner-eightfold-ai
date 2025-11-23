@@ -1,93 +1,49 @@
-![Interview Planner](image.png)
+# Interview Planner
 
-# Interview Planner Changelog
+This project is an AI-powered interview simulator designed to help users practice for job interviews. It provides a realistic interview experience with different rounds and provides feedback on user performance.
 
-This document summarizes recent changes made to the application code.
+## Features
 
----
+-   **Realistic Interview Simulation:** Engages users in a conversational interview experience.
+-   **Multiple Interview Rounds:** Supports various interview stages, including:
+    -   Warm-up
+    
+    -   Behavioral questions
+    -   Technical assessment
+    -   HR round
+-   **Resume-Based Questions:** Users can upload their resume (PDF), and the AI will ask relevant questions based on their experience and skills.
+-   **Performance Feedback:** Provides constructive feedback to help users improve their interviewing skills.
+-   **Configurable:** The interview process and prompts can be configured.
 
-### 1. Added Question Distribution Configuration
+## Architecture
 
-*   **File:** `config.py`
-*   **Reason:** The application was crashing on startup due to an `ImportError`. The `graph.py` file required percentage configurations that were missing.
-*   **Change:** Added `PROJECT_PERCENTAGE`, `TECHNICAL_PERCENTAGE`, and `FOLLOWUP_PERCENTAGE` variables to define the distribution of question types.
+The application uses a graph-based approach to manage the flow of the interview. Each node in the graph represents a state in the interview process.
 
-```python
-# config.py
+![Architecture Diagram](image.png)
 
-# ... existing content ...
+## Getting Started
 
-# Determines the rough percentage of questions per category
-PROJECT_PERCENTAGE = 0.4
-TECHNICAL_PERCENTAGE = 0.4
-FOLLOWUP_PERCENTAGE = 0.2
-```
+### Prerequisites
 
----
+-   Python 3.8+
+-   An API key for the language model being used.
 
-### 2. Fixed Incomplete Feedback Reports
+### Installation
 
-*   **File:** `prompts.py`
-*   **Reason:** The AI was often generating an incomplete feedback report, usually stopping after the "Executive Summary".
-*   **Change:** Modified the `FEEDBACK_GENERATOR_PROMPT` to use a "fill-in-the-blanks" template. This guides the AI to complete all required sections of the report.
+1.  Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <repository-name>
+    ```
+2.  Install the dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
----
+### Usage
 
-### 3. Fixed Garbled AI Responses
-
-*   **File:** `graph.py`
-*   **Reason:** On the first question after the user's introduction, the AI would sometimes respond with a garbled "series of communications" instead of a clean question.
-*   **Change:** Limited the conversation history sent to the AI to the last 4 messages. This prevents the AI from getting confused by the full chat history.
-*   **Location:** `node_interview_turn` function.
-
-```python
-# Before
-messages = [{"role": "system", "content": prompt}] + state["llm_history"]
-
-# After
-messages = [{"role": "system", "content": prompt}] + state["llm_history"][-4:]
-```
-
----
-
-### 4. Implemented "Hint on Demand" Feature
-
-*   **Files:** `app.py`, `graph.py`
-*   **Reason:** To allow the user to explicitly ask for a hint.
-*   **Changes:**
-    1.  In `app.py`: Added logic to detect if the user's input is "hint" and set a `requesting_hint` flag in the application state.
-    2.  In `graph.py`: Added logic in the `node_interview_turn` function to check for the `requesting_hint` flag and generate a hint for the last question if present.
-
----
-
-### 5. Added Fallback for Null Feedback
-
-*   **File:** `graph.py`
-*   **Reason:** In case of an error, the feedback generation could result in a null or empty report.
-*   **Change:** Added a check in the `node_feedback` function. If the generated report is empty or too short, it creates a fallback PDF containing the raw interview notes.
-
----
-
-### 6. Fixed Hint Feature Routing
-
-*   **File:** `graph.py`
-*   **Reason:** The hint feature was not working during the initial setup phase (e.g., when being asked for role/difficulty).
-*   **Change:** Updated the `master_router` function to prioritize checking for a hint request *before* checking for the setup steps. This ensures hint requests are always handled immediately.
-
-```python
-# graph.py - master_router function
-
-# Before
-def master_router(state: AgentState):
-    if not state.get("role"): 
-        return "ask_role"
-    # ...
-
-# After
-def master_router(state: AgentState):
-    if state.get("requesting_hint"):
-        return "interview_turn"
-    if not state.get("role"): 
-        return "ask_role"
-    # ...
-```
+1.  Set up your API keys in `config.py`.
+2.  Run the application:
+    ```bash
+    chainlit run app.py -w
+    ```
